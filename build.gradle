@@ -1,0 +1,87 @@
+plugins {
+	id 'java'
+	id 'java-library'  // Library 필요
+	id 'maven-publish' // Maven 배포용
+	id 'org.springframework.boot' version '3.4.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'kr.fado'
+version = '1.0.0' // 배포할 버전 명시
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+	maven { url 'https://jitpack.io' }	// exception library 가져오기
+}
+
+// Spring Boot 실행 jar 비활성화
+bootJar {
+	enabled = false
+}
+
+// 일반 라이브러리용 .jar 활성화 및 설정
+jar {
+	enabled = true
+	archiveClassifier.set('') // 'plain' 제거해서 기본 jar로 만듦
+	archiveBaseName.set("library-utils")
+	archiveVersion.set("1.0.0")
+}
+
+ext {
+	set('springCloudVersion', "2024.0.0")
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
+dependencies {
+	compileOnly 'com.github.Heo-Jin-yeong:export-exception-library:1.0.3'
+	implementation 'org.springframework.cloud:spring-cloud-starter-config'
+	implementation 'com.github.ulisesbocchio:jasypt-spring-boot-starter:3.0.5'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.2'
+
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Build Test Source Skip
+tasks.named('test') {
+//	useJUnitPlatform()
+	exclude '**/*'
+}
+
+// Maven 퍼블리싱 설정
+publishing {
+	publications {
+		mavenJava(MavenPublication) {
+			artifact tasks.named("jar") // 일반 jar 명시
+
+			groupId = 'kr.fado'
+			artifactId = 'library-utils'
+			version = '1.0.0'
+
+			pom {
+				name = 'library-utils'
+				description = 'Custom exception library for Spring Boot'
+			}
+		}
+	}
+}
